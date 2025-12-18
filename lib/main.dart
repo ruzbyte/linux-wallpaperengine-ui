@@ -270,12 +270,45 @@ class WorkshopBrowser extends StatefulWidget {
 }
 
 class _WorkshopBrowserState extends State<WorkshopBrowser> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  String? _lastWorkshopPath;
+  Future<List<WorkshopItem>>? _workshopItemsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() {
+        _searchQuery = _searchController.text.toLowerCase();
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
       listenable: AppState(),
       builder: (context, child) {
         final workshopPath = AppState().workshopPath;
+
+        if (workshopPath != _lastWorkshopPath) {
+          _lastWorkshopPath = workshopPath;
+          if (workshopPath != null) {
+            // Wrapping in a Future to allow UI to render initial state
+            _workshopItemsFuture = Future(
+              () => Workshop.getAllOfDirectory(workshopPath),
+            );
+          } else {
+            _workshopItemsFuture = null;
+          }
+        }
 
         if (workshopPath == null) {
           return Scaffold(
@@ -314,6 +347,25 @@ class _WorkshopBrowserState extends State<WorkshopBrowser> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Workshop Browser'),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search wallpapers...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                    filled: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+              ),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.folder),
@@ -329,7 +381,7 @@ class _WorkshopBrowserState extends State<WorkshopBrowser> {
             ],
           ),
           body: FutureBuilder<List<WorkshopItem>>(
-            future: Future(() => Workshop.getAllOfDirectory(workshopPath)),
+            future: _workshopItemsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -339,7 +391,17 @@ class _WorkshopBrowserState extends State<WorkshopBrowser> {
                 return const Center(child: Text('No items found.'));
               }
 
-              final items = snapshot.data!;
+              final allItems = snapshot.data!;
+              final items = allItems.where((item) {
+                return item.name.toLowerCase().contains(_searchQuery);
+              }).toList();
+
+              if (items.isEmpty) {
+                return const Center(
+                  child: Text('No matching wallpapers found.'),
+                );
+              }
+
               return GridView.builder(
                 padding: const EdgeInsets.all(8.0),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

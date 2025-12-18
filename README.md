@@ -1,4 +1,6 @@
-# wpeui
+# Linux Wallpaper Engine UI
+
+## FIRST RELEASE ON ITS WAY
 
 A Flutter-based graphical user interface for the linux-wallpaperengine utility. This application allows you to browse your subscribed Steam Workshop wallpapers and configure them for multiple monitors on Linux.
 
@@ -7,14 +9,13 @@ A Flutter-based graphical user interface for the linux-wallpaperengine utility. 
 - **Workshop Browser**: View and select wallpapers from your local Steam Workshop directory.
 - **Multi-Monitor Support**: Configure different wallpapers and scaling options for each connected monitor.
 - **Global Settings**: Control application-wide settings such as FPS limit, Silent Mode (audio mute), and Parallax effects.
-- **Customization**: Dark, flat Material 3 theme with an option to hide window decorations for a cleaner look.
 - **Persistence**: Automatically saves your configuration and window settings to `~/.config/wpeui/config.json`.
 
 ## Prerequisites
 
 1. **linux-wallpaperengine**: This application acts as a frontend. You must have the backend utility installed and accessible in your system PATH.
 
-   - Repository: https://github.com/Alchemos/linux-wallpaperengine
+   - Repository: https://github.com/Almamu/linux-wallpaperengine
 
 2. **Steam Workshop Content**: You need to have Wallpaper Engine wallpapers downloaded via Steam. The application looks for content in the default Steam Workshop directory for App ID 431960.
 
@@ -44,3 +45,9 @@ Configuration files are stored in:
 2. **Select**: Click on a wallpaper to view details.
 3. **Configure**: Select a monitor and scaling mode, then click "Set for Monitor".
 4. **Apply**: Go to the "Monitors" tab to review your setup. Adjust global settings (FPS, etc.) and click "Apply All" to launch the wallpaper engine.
+
+## Special Thanks to
+
+- [Almamu](https://github.com/Almamu) creator of the actual wallpaperengine
+
+Now I finally have my wallpapers on linux :)
