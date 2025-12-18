@@ -2,6 +2,10 @@
 
 ## FIRST RELEASE ON ITS WAY
 
+
+https://github.com/user-attachments/assets/c150bf0b-b6ec-4074-bb94-957703445baf
+
+
 A Flutter-based graphical user interface for the linux-wallpaperengine utility. This application allows you to browse your subscribed Steam Workshop wallpapers and configure them for multiple monitors on Linux.
 
 ## Features
