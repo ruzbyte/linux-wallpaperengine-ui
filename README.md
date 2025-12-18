@@ -1,0 +1,46 @@
+# wpeui
+
+A Flutter-based graphical user interface for the linux-wallpaperengine utility. This application allows you to browse your subscribed Steam Workshop wallpapers and configure them for multiple monitors on Linux.
+
+## Features
+
+- **Workshop Browser**: View and select wallpapers from your local Steam Workshop directory.
+- **Multi-Monitor Support**: Configure different wallpapers and scaling options for each connected monitor.
+- **Global Settings**: Control application-wide settings such as FPS limit, Silent Mode (audio mute), and Parallax effects.
+- **Customization**: Dark, flat Material 3 theme with an option to hide window decorations for a cleaner look.
+- **Persistence**: Automatically saves your configuration and window settings to `~/.config/wpeui/config.json`.
+
+## Prerequisites
+
+1. **linux-wallpaperengine**: This application acts as a frontend. You must have the backend utility installed and accessible in your system PATH.
+
+   - Repository: https://github.com/Alchemos/linux-wallpaperengine
+
+2. **Steam Workshop Content**: You need to have Wallpaper Engine wallpapers downloaded via Steam. The application looks for content in the default Steam Workshop directory for App ID 431960.
+
+## Installation and Running
+
+1. Clone the repository.
+2. Ensure you have Flutter installed and configured for Linux desktop development.
+3. Install dependencies:
+   ```bash
+   flutter pub get
+   ```
+4. Run the application:
+   ```bash
+   flutter run -d linux
+   ```
+
+## Configuration
+
+The application currently looks for Workshop items in a specific directory. If your Steam library is in a non-standard location, you may need to modify the path in `lib/main.dart`.
+
+Configuration files are stored in:
+`~/.config/wpeui/config.json`
+
+## Usage
+
+1. **Browse**: Navigate to the "Browse" tab to see your available wallpapers.
+2. **Select**: Click on a wallpaper to view details.
+3. **Configure**: Select a monitor and scaling mode, then click "Set for Monitor".
+4. **Apply**: Go to the "Monitors" tab to review your setup. Adjust global settings (FPS, etc.) and click "Apply All" to launch the wallpaper engine.
