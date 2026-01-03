@@ -1,14 +1,75 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:wpeui/services/workshop.dart';
 import 'package:wpeui/services/wpe.dart';
 import 'package:wpeui/services/monitor.dart';
 import 'package:wpeui/state/app_state.dart';
 
-void main() async {
+Map<String, String> cliOptions = {
+  "--help": "Show help information",
+  "--nogui": "Run Wallpaper Engine without UI",
+  "--apply": "Apply current configuration and exit",
+  "--version": "Show application version",
+};
+
+void echoHelp() {
+  stdout.writeln('Wallpaper Engine UI - Command Line Options:');
+  cliOptions.forEach((option, description) {
+    stdout.writeln('$option: $description');
+  });
+}
+
+void echoVersion() async {
+  PackageInfo packageInfo = await PackageInfo.fromPlatform();
+  stdout.writeln('Wallpaper Engine UI - Version ${packageInfo.version}');
+}
+
+Future<void> applyNogui() async {
+  final appState = AppState();
+
+  // Wait for AppState to load configuration
+  await Future.delayed(const Duration(seconds: 1));
+
+  final configs = appState.monitorConfigs.values.toList();
+
+  if (configs.isEmpty) {
+    stdout.writeln('No monitor configurations found to apply.');
+    exit(1);
+  }
+
+  launchWpe(
+    configs,
+    fps: appState.fps,
+    silent: appState.silent,
+    noParallax: appState.noParallax,
+  );
+
+  stdout.writeln('Applied configuration successfully.');
+}
+
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (args.contains('--help')) {
+    echoHelp();
+    exit(0);
+  }
+
+  if (args.contains('--version')) {
+    echoVersion();
+    exit(0);
+  }
+
+  if (args.contains("--nogui") || args.contains("--apply")) {
+    await applyNogui();
+    if (args.contains("--nogui")) {
+      exit(0);
+    }
+  }
+
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = const WindowOptions(
