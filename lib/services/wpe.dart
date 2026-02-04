@@ -91,40 +91,41 @@ class WpeCommandBuilder {
   }
 }
 
-void killWpe() {
-  Process.run('pkill', ['-f', 'linux-wallpaperengine']);
+Future<void> killWpe() async {
+  // Use pkill with exact match to avoid killing unrelated processes
+  // The -x flag matches the exact process name
+  try {
+    await Process.run('pkill', ['-x', 'linux-wallpaperengine']);
+  } catch (_) {
+    // Ignore errors if no process was found
+  }
+  // Give it a moment to terminate
+  await Future.delayed(const Duration(milliseconds: 300));
 }
 
-void launchWpe(
+/// Launches linux-wallpaperengine with the given options.
+/// Returns the command that was executed (useful for debugging).
+/// Throws an exception if the process fails to start.
+Future<String> launchWpe(
   List<WpeLaunchOptions> options, {
   int fps = 30,
   bool silent = false,
   bool noParallax = false,
-}) {
-  killWpe();
+}) async {
+  await killWpe();
+
+  if (options.isEmpty) {
+    throw Exception('No wallpaper configurations provided');
+  }
+
   final builder = WpeCommandBuilder();
 
-  // Apply global options first (or anywhere, order usually doesn't matter for flags,
-  // but for clarity let's do it once if the tool supports it globally.
-  // Based on "linux-wallpaperengine supports it via one command spawning one process for each monitor",
-  // usually flags like --fps are global or per-process.
-  // If we spawn one process per monitor via one command line, we might need to repeat flags
-  // or put them at the start.
-  // Assuming the tool parses arguments sequentially: [global options] [monitor1 options] [monitor2 options]
-  // OR [monitor1 options] [monitor2 options] where options are repeated.
-  // The user said "dispatching the command creates two or more processes... linux-wallpaperengine supports it via one command".
-  // Typically this looks like: linux-wallpaperengine --screen-root DP-1 --bg 123 --screen-root DP-2 --bg 456
-  // Global flags like --fps might apply to all if placed at start, or need repetition.
-  // Let's assume global flags apply to the whole session or need to be repeated.
-  // To be safe and consistent with previous logic, let's apply them for EACH monitor block if the tool requires it,
-  // OR just once if it's a global setting for the daemon.
-  // However, the user explicitly said "you can't declare --silent --fps --disable-parallax for each wallpaper".
-  // This implies they ARE global. So we should append them ONCE.
-
+  // Global options (--fps, --silent, --disable-parallax apply to all monitors)
   builder.withFPS(fps);
   builder.withSilentMode(silent);
   builder.withNoParallax(noParallax);
 
+  // Per-monitor options
   for (var option in options) {
     builder.withMonitor(option.monitorName);
     builder.withScaling(option.scaling);
@@ -132,8 +133,42 @@ void launchWpe(
   }
 
   final command = builder.build();
+
   if (kDebugMode) {
     print("Launching WPE with command: $command");
   }
-  Process.start('bash', ['-c', command]);
+
+  // First check if linux-wallpaperengine exists
+  final whichResult = await Process.run('which', ['linux-wallpaperengine']);
+  if (whichResult.exitCode != 0) {
+    throw Exception(
+      'linux-wallpaperengine not found in PATH. '
+      'Please install it from https://github.com/Almamu/linux-wallpaperengine',
+    );
+  }
+
+  // Start the process detached so it survives if this app closes
+  // Using Process.start with detached mode
+  try {
+    final parts = command.split(' ').where((s) => s.isNotEmpty).toList();
+    final executable = parts.first;
+    final args = parts.skip(1).toList();
+
+    await Process.start(
+      executable,
+      args,
+      mode: ProcessStartMode.detachedWithStdio,
+    );
+  } catch (e) {
+    throw Exception('Failed to launch linux-wallpaperengine: $e');
+  }
+
+  // Give the process a moment to start
+  await Future.delayed(const Duration(milliseconds: 300));
+
+  if (kDebugMode) {
+    print("WPE process started successfully");
+  }
+
+  return command;
 }

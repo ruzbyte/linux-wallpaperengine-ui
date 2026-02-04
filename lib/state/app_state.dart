@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,11 @@ import 'package:wpeui/services/wpe.dart';
 class AppState extends ChangeNotifier {
   static final AppState _instance = AppState._internal();
   factory AppState() => _instance;
+
+  final Completer<void> _configLoaded = Completer<void>();
+
+  /// Future that completes when the configuration has been loaded
+  Future<void> get configLoaded => _configLoaded.future;
 
   AppState._internal() {
     _loadConfig();
@@ -67,6 +73,10 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       if (kDebugMode) {
         print('Error loading config: $e');
+      }
+    } finally {
+      if (!_configLoaded.isCompleted) {
+        _configLoaded.complete();
       }
     }
   }

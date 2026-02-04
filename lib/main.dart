@@ -31,23 +31,29 @@ Future<void> applyNogui() async {
   final appState = AppState();
 
   // Wait for AppState to load configuration
-  await Future.delayed(const Duration(seconds: 1));
+  await appState.configLoaded;
 
   final configs = appState.monitorConfigs.values.toList();
 
   if (configs.isEmpty) {
-    stdout.writeln('No monitor configurations found to apply.');
+    stderr.writeln('Error: No monitor configurations found to apply.');
+    stderr.writeln('Please configure wallpapers using the GUI first.');
     exit(1);
   }
 
-  launchWpe(
-    configs,
-    fps: appState.fps,
-    silent: appState.silent,
-    noParallax: appState.noParallax,
-  );
-
-  stdout.writeln('Applied configuration successfully.');
+  try {
+    final command = await launchWpe(
+      configs,
+      fps: appState.fps,
+      silent: appState.silent,
+      noParallax: appState.noParallax,
+    );
+    stdout.writeln('Wallpaper engine started successfully.');
+    stdout.writeln('Command: $command');
+  } catch (e) {
+    stderr.writeln('Error: $e');
+    exit(1);
+  }
 }
 
 void main(List<String> args) async {
@@ -302,16 +308,32 @@ class MonitorsTab extends StatelessWidget {
           ),
           floatingActionButton: configs.isNotEmpty
               ? FloatingActionButton.extended(
-                  onPressed: () {
-                    launchWpe(
-                      configs.values.toList(),
-                      fps: appState.fps,
-                      silent: appState.silent,
-                      noParallax: appState.noParallax,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Applied configuration!')),
-                    );
+                  onPressed: () async {
+                    try {
+                      await launchWpe(
+                        configs.values.toList(),
+                        fps: appState.fps,
+                        silent: appState.silent,
+                        noParallax: appState.noParallax,
+                      );
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Wallpaper applied successfully!'),
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Error: $e'),
+                            backgroundColor: Colors.red,
+                            duration: const Duration(seconds: 5),
+                          ),
+                        );
+                      }
+                    }
                   },
                   label: const Text('Apply All'),
                   icon: const Icon(Icons.check),
@@ -556,8 +578,7 @@ class _WorkshopItemDetailState extends State<WorkshopItemDetail> {
 
   Future<void> _loadMonitors() async {
     try {
-      final monitorsJson = await Monitor.getMonitors();
-      final names = Monitor.getMonitorNames(monitorsJson);
+      final names = await Monitor.getMonitorNames();
       if (mounted) {
         setState(() {
           _monitors = names;
