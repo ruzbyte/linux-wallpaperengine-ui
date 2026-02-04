@@ -3,7 +3,7 @@ import 'dart:io';
 
 class Monitor {
   static const String hyprCommand = "hyprctl monitors -j";
-  static const String niriCommand = "niri msg outputs --json";
+  static const String niriCommand = "niri msg --json outputs";
 
   static Future<dynamic> getMonitors() async {
     String command = isOnHyprland() ? hyprCommand : niriCommand;
